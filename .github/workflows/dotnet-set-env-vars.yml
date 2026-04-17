@@ -1,0 +1,117 @@
+name: dotnet-set-env-vars
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  pull-requests: write
+  security-events: write
+  issues: write
+
+on:
+  workflow_call:
+    outputs:
+      JFROG_PROJECT_KEY:
+        description: "JFrog project key"
+        value: ${{ jobs.set_vars.outputs.JFROG_PROJECT_KEY }}
+      JFROG_SECONDARY_REPO_KEY:
+        description: "JFrog secondary repo key"
+        value: ${{ jobs.set_vars.outputs.JFROG_SECONDARY_REPO_KEY }}
+      DOTNET_VERSION:
+        description: "Dotnet version"
+        value: ${{ jobs.set_vars.outputs.DOTNET_VERSION }}
+      JFROG_URL:
+        description: "JFrog URL"
+        value: ${{ jobs.set_vars.outputs.JFROG_URL }}
+      AZURE_WEBAPP_NAME:
+        description: "Azure webapp name"
+        value: ${{ jobs.set_vars.outputs.AZURE_WEBAPP_NAME }}
+      AZURE_WEBAPP_NAME2:
+        description: "Azure webapp name 2"
+        value: ${{ jobs.set_vars.outputs.AZURE_WEBAPP_NAME2 }}
+      WEBAPP_BUILD_PATH:
+        description: "Web app build path"
+        value: ${{ jobs.set_vars.outputs.WEBAPP_BUILD_PATH }}
+      CYBERARK_CERTIFICATE_NAME:
+        description: "Cyberark Cert Name"
+        value: ${{ jobs.set_vars.outputs.CYBERARK_CERTIFICATE_NAME }}
+      LOAD_BALANCED:
+        description: "Load balanced"
+        value: ${{ jobs.set_vars.outputs.LOAD_BALANCED }}
+      SONAR_PROJECT_KEY:
+        description: "Sonar project key"
+        value: ${{ jobs.set_vars.outputs.SONAR_PROJECT_KEY }}
+      WORKING_DIRECTORY:
+        description: "Working directory"
+        value: ${{ jobs.set_vars.outputs.WORKING_DIRECTORY }}
+      UPLOAD_ARTIFACTS_PATH:
+        description: "Upload artifacts path"
+        value: ${{ jobs.set_vars.outputs.UPLOAD_ARTIFACTS_PATH }}
+      ARTIFACT_TYPE:
+        description: "Artifact type"
+        value: ${{ jobs.set_vars.outputs.ARTIFACT_TYPE }}
+      ENABLE_SONAR:
+        description: "Enable Sonar"
+        value: ${{ jobs.set_vars.outputs.ENABLE_SONAR }}
+
+jobs:
+  set_vars:
+    environment: ${{ contains('dev development test stage main prod master', github.ref_name) && github.ref_name || 'dev' }}
+    runs-on: uhg-runner
+    outputs:
+      JFROG_PROJECT_KEY: ${{ steps.set_env.outputs.JFROG_PROJECT_KEY }}
+      JFROG_SECONDARY_REPO_KEY: ${{ steps.set_env.outputs.JFROG_SECONDARY_REPO_KEY }}
+      DOTNET_VERSION: ${{ steps.set_env.outputs.DOTNET_VERSION }}
+      JFROG_URL: ${{ steps.set_env.outputs.JFROG_URL }}
+      AZURE_WEBAPP_NAME: ${{ steps.set_env.outputs.AZURE_WEBAPP_NAME }}
+      AZURE_WEBAPP_NAME2: ${{ steps.set_env.outputs.AZURE_WEBAPP_NAME2 }}
+      WEBAPP_BUILD_PATH: ${{ steps.set_env.outputs.WEBAPP_BUILD_PATH }}
+      CYBERARK_CERTIFICATE_NAME: ${{ steps.set_env.outputs.CYBERARK_CERTIFICATE_NAME }}
+      LOAD_BALANCED: ${{ steps.set_env.outputs.LOAD_BALANCED }}
+      SONAR_PROJECT_KEY: ${{ steps.set_env.outputs.SONAR_PROJECT_KEY }}
+      WORKING_DIRECTORY: ${{ steps.set_env.outputs.WORKING_DIRECTORY }}
+      UPLOAD_ARTIFACTS_PATH: ${{ steps.set_env.outputs.UPLOAD_ARTIFACTS_PATH }}
+      ARTIFACT_TYPE: ${{ steps.set_env.outputs.ARTIFACT_TYPE }}
+      ENABLE_SONAR: ${{ steps.set_env.outputs.ENABLE_SONAR }}
+
+    steps:
+      - id: set_env
+        run: |
+          echo "Logging environment variables:"
+          echo "JFROG_PROJECT_KEY=${{ vars.JFROG_PROJECT_KEY }}" >> $GITHUB_OUTPUT
+          echo "JFROG_SECONDARY_REPO_KEY=${{ vars.JFROG_SECONDARY_REPO_KEY }}" >> $GITHUB_OUTPUT
+          echo "DOTNET_VERSION=${{ vars.DOTNET_VERSION }}" >> $GITHUB_OUTPUT
+          echo "JFROG_URL=${{ vars.JFROG_URL }}" >> $GITHUB_OUTPUT
+          echo "AZURE_WEBAPP_NAME=${{ vars.AZURE_WEBAPP_NAME }}" >> $GITHUB_OUTPUT
+          echo "AZURE_WEBAPP_NAME2=${{ vars.AZURE_WEBAPP_NAME2 }}" >> $GITHUB_OUTPUT
+          echo "WEBAPP_BUILD_PATH=${{ vars.WEBAPP_BUILD_PATH }}" >> $GITHUB_OUTPUT
+          echo "CYBERARK_CERTIFICATE_NAME=${{ vars.CYBERARK_CERTIFICATE_NAME }}" >> $GITHUB_OUTPUT
+          echo "LOAD_BALANCED=${{ vars.LOAD_BALANCED }}" >> $GITHUB_OUTPUT
+          echo "SONAR_PROJECT_KEY=${{ vars.SONAR_PROJECT_KEY }}" >> $GITHUB_OUTPUT
+          echo "WORKING_DIRECTORY=${{ vars.WORKING_DIRECTORY }}" >> $GITHUB_OUTPUT
+          echo "UPLOAD_ARTIFACTS_PATH=${{ vars.UPLOAD_ARTIFACTS_PATH }}" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_TYPE=${{ vars.ARTIFACT_TYPE }}" >> $GITHUB_OUTPUT
+          echo "ENABLE_SONAR=${{ vars.ENABLE_SONAR }}" >> $GITHUB_OUTPUT
+
+  log_variables:
+    needs: [set_vars]
+    runs-on: uhg-runner
+    steps:
+      - name: Log variables from outputs
+        run: |
+          echo "JFROG_PROJECT_KEY: ${{ needs.set_vars.outputs.JFROG_PROJECT_KEY }}"
+          echo "JFROG_SECONDARY_REPO_KEY: ${{ needs.set_vars.outputs.JFROG_SECONDARY_REPO_KEY }}"
+          echo "DOTNET_VERSION: ${{ needs.set_vars.outputs.DOTNET_VERSION }}"
+          echo "JFROG_URL: ${{ needs.set_vars.outputs.JFROG_URL }}"
+          echo "AZURE_WEBAPP_NAME: ${{ needs.set_vars.outputs.AZURE_WEBAPP_NAME }}"
+          echo "AZURE_WEBAPP_NAME2: ${{ needs.set_vars.outputs.AZURE_WEBAPP_NAME2 }}"
+          echo "WEBAPP_BUILD_PATH: ${{ needs.set_vars.outputs.WEBAPP_BUILD_PATH }}"
+          echo "CYBERARK_CERTIFICATE_NAME: ${{ needs.set_vars.outputs.CYBERARK_CERTIFICATE_NAME }}"
+          echo "LOAD_BALANCED: ${{ needs.set_vars.outputs.LOAD_BALANCED }}"
+          echo "SONAR_PROJECT_KEY: ${{ needs.set_vars.outputs.SONAR_PROJECT_KEY }}"
+          echo "WORKING_DIRECTORY: ${{ needs.set_vars.outputs.WORKING_DIRECTORY }}"
+          echo "UPLOAD_ARTIFACTS_PATH: ${{ needs.set_vars.outputs.UPLOAD_ARTIFACTS_PATH }}"
+          echo "ARTIFACT_TYPE: ${{ needs.set_vars.outputs.ARTIFACT_TYPE }}"
+          echo "ENABLE_SONAR: ${{ needs.set_vars.outputs.ENABLE_SONAR }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Run ID: ${{ github.run_id }}"
