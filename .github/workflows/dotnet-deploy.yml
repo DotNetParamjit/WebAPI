@@ -1,0 +1,79 @@
+name: Build .NET and deploy
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  pull-requests: write
+  security-events: write
+  issues: write
+
+on:
+  push: null
+  workflow_dispatch:
+    inputs:
+      deploy_to_prod:
+        description: "Deploy to production?"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+      ARTIFACT_RUN_ID:
+        description: "Run ID of artifact to deploy (skip build if set)"
+        required: false
+        default: ""
+
+jobs:
+  # 1) Load environment variables from GitHub environment
+  call-dotnet-set-env-vars:
+    uses: optum-endusertech/smd-euts-reusable-workflows/.github/workflows/dotnet-set-env-vars-app.yml@develop
+
+  # 2) Build .NET app
+  call-dotnet-build:
+    needs: [call-dotnet-set-env-vars]
+    uses: optum-endusertech/smd-euts-reusable-workflows/.github/workflows/dotnet-epl-workflow-build-app.yml@develop
+
+    with:
+      BUILD_PLATFORM: ${{ needs.call-dotnet-set-env-vars.outputs.BUILD_PLATFORM }}
+      NUGET_SOURCE: ${{ needs.call-dotnet-set-env-vars.outputs.NUGET_SOURCE }}
+      JFROG_PROJECT_KEY: ${{ needs.call-dotnet-set-env-vars.outputs.JFROG_PROJECT_KEY }}
+      SOLUTION_FILE_NAME: ${{ needs.call-dotnet-set-env-vars.outputs.SOLUTION_FILE_NAME }}
+      PUBLISH_PROJECT_PATH: ${{ needs.call-dotnet-set-env-vars.outputs.PUBLISH_PROJECT_PATH }}
+      BUILD_CONFIGURATION: ${{ (github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name == 'prod') && 'PROD' || github.ref_name }}
+
+    secrets:
+      SMD_DEVOPS_TOKEN: ${{ secrets.SMD_DEVOPS_TOKEN }}
+
+  # 3) Deploy
+  call-dotnet-deploy:
+    needs: [call-dotnet-set-env-vars, call-dotnet-build]
+    uses: optum-endusertech/smd-euts-reusable-workflows/.github/workflows/dotnet-deploy-app-window-service10.yml@develop
+
+    secrets:
+      CYBERARK_URL: ${{ secrets.CYBERARK_URL }}
+      CYBERARK_APP_ID: ${{ secrets.CYBERARK_APP_ID }}
+      CYBERARK_OBJECT: ${{ secrets.CYBERARK_OBJECT }}
+      CYBERARK_SAFE: ${{ secrets.CYBERARK_SAFE }}
+      CYBERARK_CLIENT_PFX_BASE64: ${{ secrets.CYBERARK_CLIENT_PFX_BASE64 }}
+      CYBERARK_PFX_PASSWORD: ${{ secrets.CYBERARK_PFX_PASSWORD }}
+
+    with:
+      # ---- Required ----
+      JFROG_PROJECT_KEY: ${{ needs.call-dotnet-set-env-vars.outputs.JFROG_PROJECT_KEY }}
+      REMOTE_HOST: ${{ needs.call-dotnet-set-env-vars.outputs.REMOTE_HOST }}
+      REMOTE_PATH: ${{ needs.call-dotnet-set-env-vars.outputs.REMOTE_PATH }}
+      BACKUP_DIR: ${{ needs.call-dotnet-set-env-vars.outputs.BACKUP_DIR }}
+
+      # ---- Optional (service/task management) ----
+      SERVICE_NAME: ${{ needs.call-dotnet-set-env-vars.outputs.SERVICE_NAME }}
+      SCHEDULED_TASKS: ${{ needs.call-dotnet-set-env-vars.outputs.SCHEDULED_TASKS }}
+
+      # ---- Optional overrides ----
+      BACKUP_RETENTION_DAYS: ${{ needs.call-dotnet-set-env-vars.outputs.BACKUP_RETENTION_DAYS }}
+      BACKUP_MAX_COUNT: ${{ needs.call-dotnet-set-env-vars.outputs.BACKUP_MAX_COUNT }}
+      WIN_DOMAIN: ${{ needs.call-dotnet-set-env-vars.outputs.WIN_DOMAIN }}
+
+      ARTIFACT_RUN_ID: ${{ inputs.ARTIFACT_RUN_ID }}
